@@ -85,7 +85,7 @@ export default function App() {
 
       {/* GAME CANVAS CONTAINER */}
       <div className="relative flex-1 min-h-0 w-full flex items-center justify-center p-2">
-        <div className="relative aspect-[8/9] h-full max-w-full">
+        <div className="relative aspect-[4/3] h-full max-w-full">
           <canvas
             ref={canvasRef}
             className="w-full h-full object-contain rounded-lg shadow-[0_0_50px_rgba(220,38,38,0.25)] border-2 border-neutral-800 bg-neutral-900"

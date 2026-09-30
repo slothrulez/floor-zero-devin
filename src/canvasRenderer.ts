@@ -51,7 +51,7 @@ export class CanvasRenderer {
     this.ctx.lineWidth = 1;
 
     // Vertical structural pillars
-    const pillars = [60, 200, 400, 600, 740];
+    const pillars = [120, 350, 600, 850, 1080];
     pillars.forEach((px) => {
       this.ctx.fillStyle = '#141a26';
       this.ctx.fillRect(px - 10, 0, 20, this.height);
@@ -430,7 +430,7 @@ export class CanvasRenderer {
     this.ctx.imageSmoothingEnabled = true;
 
     // Draw sprite ~1.5x larger than the hitbox, feet anchored to hitbox bottom
-    const scale = 1.5;
+    const scale = 1.75;
     const dw = (player.width + 8) * scale;
     const dh = (player.height + 4) * scale;
     const dx = player.x + player.width / 2 - dw / 2;

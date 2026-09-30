@@ -390,6 +390,7 @@ export class CanvasRenderer {
 
   public drawPlayer(player: Player, globalTime: number) {
     this.ctx.save();
+    this.ctx.imageSmoothingEnabled = false;
 
     // If sprite sheet is loaded, draw from sprite sheet or use high-fidelity procedural sprite
     if (this.spriteSheetLoaded && this.spriteSheet) {
@@ -454,34 +455,45 @@ export class CanvasRenderer {
       this.ctx.scale(-1, 1);
     }
 
-    // Exact appearance requested: Dark hair, Black outfit (shirt & pants), Red sneakers!
+    // Colors requested: Brown guy, black tee, black pants, red Puma Speedcat shoes with white stripe
+    const skinTone = '#92400e'; // Warm rich brown skin
+    const skinHighlight = '#b45309';
+    const blackTee = '#18181b'; // Black t-shirt
+    const blackPants = '#09090b'; // Black trousers
+    const pumaRed = '#dc2626'; // Red Speedcat shoe
+    const pumaWhite = '#ffffff'; // Speedcat signature white curved formstrip & sole
+    const darkHair = '#090d16'; // Dark hair
+
     const frame = Math.floor(player.animFrame);
 
     if (player.animState === 'DEATH') {
       // Fallen character on floor
       this.ctx.rotate(Math.PI / 2);
-      // Torso (Black Shirt)
-      this.ctx.fillStyle = '#18181b';
+      // Torso (Black Tee)
+      this.ctx.fillStyle = blackTee;
       this.ctx.fillRect(-10, -8, 20, 16);
       // Pants (Black)
-      this.ctx.fillStyle = '#09090b';
+      this.ctx.fillStyle = blackPants;
       this.ctx.fillRect(-10, 8, 20, 12);
-      // Red Sneakers
-      this.ctx.fillStyle = '#ef4444';
+      // Red Puma Speedcat Sneakers
+      this.ctx.fillStyle = pumaRed;
       this.ctx.fillRect(-12, 20, 12, 6);
       this.ctx.fillRect(2, 20, 12, 6);
-      // Head & Dark Hair
-      this.ctx.fillStyle = '#fca5a5';
+      this.ctx.fillStyle = pumaWhite;
+      this.ctx.fillRect(-10, 24, 10, 2);
+      this.ctx.fillRect(4, 24, 10, 2);
+      // Head & Skin & Hair
+      this.ctx.fillStyle = skinTone;
       this.ctx.beginPath();
       this.ctx.arc(0, -14, 8, 0, Math.PI * 2);
       this.ctx.fill();
-      this.ctx.fillStyle = '#172554';
+      this.ctx.fillStyle = darkHair;
       this.ctx.fillRect(-8, -22, 16, 8);
       this.ctx.restore();
       return;
     }
 
-    // Animation bobbing offset
+    // Animation bobbing offsets
     let legOffset = 0;
     let armOffset = 0;
 
@@ -493,72 +505,106 @@ export class CanvasRenderer {
       armOffset = -legOffset;
     }
 
-    // 1. Red Sneakers (Feet / Shoes)
-    this.ctx.fillStyle = '#dc2626'; // Bright Red sneakers
+    // 1. RED PUMA SPEEDCAT SNEAKERS (Sleek red low-profile shoes + white formstrip)
+    this.ctx.fillStyle = pumaRed;
     if (player.animState === 'CLIMB') {
-      this.ctx.fillRect(-10, 16 + legOffset, 7, 7);
-      this.ctx.fillRect(3, 16 - legOffset, 7, 7);
-      // White sneaker soles
-      this.ctx.fillStyle = '#f8fafc';
-      this.ctx.fillRect(-10, 21 + legOffset, 7, 2);
-      this.ctx.fillRect(3, 21 - legOffset, 7, 2);
+      this.ctx.fillRect(-10, 16 + legOffset, 8, 7);
+      this.ctx.fillRect(3, 16 - legOffset, 8, 7);
+      // White Puma Formstrip logo & sole
+      this.ctx.fillStyle = pumaWhite;
+      this.ctx.fillRect(-9, 18 + legOffset, 6, 2);
+      this.ctx.fillRect(4, 18 - legOffset, 6, 2);
+      this.ctx.fillRect(-10, 22 + legOffset, 8, 2);
+      this.ctx.fillRect(3, 22 - legOffset, 8, 2);
     } else if (player.animState === 'JUMP') {
-      this.ctx.fillRect(-9, 14, 8, 6);
-      this.ctx.fillRect(2, 12, 8, 6);
+      this.ctx.fillRect(-10, 14, 10, 7);
+      this.ctx.fillRect(2, 12, 10, 7);
+      // White Puma Formstrip logo & sole
+      this.ctx.fillStyle = pumaWhite;
+      this.ctx.fillRect(-8, 16, 7, 2);
+      this.ctx.fillRect(4, 14, 7, 2);
+      this.ctx.fillRect(-10, 20, 10, 2);
+      this.ctx.fillRect(2, 18, 10, 2);
     } else {
       // Normal walk/run sneakers
-      this.ctx.fillRect(-10 - legOffset * 0.4, 16, 9, 7);
-      this.ctx.fillRect(2 + legOffset * 0.4, 16, 9, 7);
-      // White sneaker soles
-      this.ctx.fillStyle = '#f8fafc';
-      this.ctx.fillRect(-10 - legOffset * 0.4, 21, 9, 2);
-      this.ctx.fillRect(2 + legOffset * 0.4, 21, 9, 2);
+      const lx = -11 - legOffset * 0.4;
+      const rx = 2 + legOffset * 0.4;
+      this.ctx.fillRect(lx, 16, 10, 7);
+      this.ctx.fillRect(rx, 16, 10, 7);
+
+      // White Puma Speedcat iconic Formstrip curved stripe
+      this.ctx.fillStyle = pumaWhite;
+      this.ctx.beginPath();
+      this.ctx.moveTo(lx + 2, 19);
+      this.ctx.lineTo(lx + 8, 17);
+      this.ctx.lineTo(lx + 8, 19);
+      this.ctx.fill();
+
+      this.ctx.beginPath();
+      this.ctx.moveTo(rx + 2, 19);
+      this.ctx.lineTo(rx + 8, 17);
+      this.ctx.lineTo(rx + 8, 19);
+      this.ctx.fill();
+
+      // White sneaker sole
+      this.ctx.fillRect(lx, 22, 10, 2);
+      this.ctx.fillRect(rx, 22, 10, 2);
     }
 
-    // 2. Black Pants (Legs)
-    this.ctx.fillStyle = '#09090b'; // Black trousers
+    // 2. BLACK PANTS (Legs)
+    this.ctx.fillStyle = blackPants;
     this.ctx.fillRect(-9 - legOffset * 0.3, 4, 7, 13);
     this.ctx.fillRect(2 + legOffset * 0.3, 4, 7, 13);
+    // Subtle knee highlight lines
+    this.ctx.fillStyle = '#27272a';
+    this.ctx.fillRect(-8 - legOffset * 0.3, 10, 5, 2);
+    this.ctx.fillRect(3 + legOffset * 0.3, 10, 5, 2);
 
-    // 3. Black Shirt (Torso)
-    this.ctx.fillStyle = '#18181b'; // Black top
+    // 3. BLACK TEE SHIRT (Torso)
+    this.ctx.fillStyle = blackTee;
     this.ctx.fillRect(-10, -10, 20, 15);
-    // Red accent trim on shirt collar/logo
-    this.ctx.fillStyle = '#ef4444';
-    this.ctx.fillRect(-2, -8, 4, 4);
+    // White/Red small graphic logo on chest
+    this.ctx.fillStyle = pumaRed;
+    this.ctx.fillRect(-2, -8, 4, 3);
+    this.ctx.fillStyle = pumaWhite;
+    this.ctx.fillRect(-1, -7, 2, 1);
 
-    // 4. Arms
-    this.ctx.fillStyle = '#18181b';
+    // 4. ARMS & HANDS (Brown skin)
+    this.ctx.fillStyle = blackTee; // Sleeves
     if (player.animState === 'CLIMB') {
-      this.ctx.fillRect(-13, -16 + armOffset, 5, 12);
-      this.ctx.fillRect(8, -16 - armOffset, 5, 12);
-      // Hands (Skin tone)
-      this.ctx.fillStyle = '#fed7aa';
-      this.ctx.fillRect(-13, -18 + armOffset, 5, 4);
-      this.ctx.fillRect(8, -18 - armOffset, 5, 4);
+      this.ctx.fillRect(-13, -16 + armOffset, 5, 8);
+      this.ctx.fillRect(8, -16 - armOffset, 5, 8);
+      // Forearms & Hands (Brown skin)
+      this.ctx.fillStyle = skinTone;
+      this.ctx.fillRect(-13, -18 + armOffset, 5, 6);
+      this.ctx.fillRect(8, -18 - armOffset, 5, 6);
     } else {
-      this.ctx.fillRect(-13 + armOffset * 0.5, -8, 5, 12);
-      this.ctx.fillRect(8 - armOffset * 0.5, -8, 5, 12);
-      // Hands
-      this.ctx.fillStyle = '#fed7aa';
-      this.ctx.fillRect(-13 + armOffset * 0.5, 2, 5, 4);
-      this.ctx.fillRect(8 - armOffset * 0.5, 2, 5, 4);
+      this.ctx.fillRect(-13 + armOffset * 0.5, -9, 5, 7);
+      this.ctx.fillRect(8 - armOffset * 0.5, -9, 5, 7);
+      // Forearms & Hands (Brown skin)
+      this.ctx.fillStyle = skinTone;
+      this.ctx.fillRect(-13 + armOffset * 0.5, -2, 5, 8);
+      this.ctx.fillRect(8 - armOffset * 0.5, -2, 5, 8);
     }
 
-    // 5. Head & Skin
-    this.ctx.fillStyle = '#fed7aa'; // Skin tone
-    this.ctx.fillRect(-7, -20, 14, 11);
+    // 5. HEAD & BROWN SKIN
+    this.ctx.fillStyle = skinTone;
+    this.ctx.fillRect(-7, -21, 14, 12);
+    this.ctx.fillStyle = skinHighlight;
+    this.ctx.fillRect(-5, -20, 10, 3);
 
-    // 6. Dark Messy Hair
-    this.ctx.fillStyle = '#172554'; // Dark hair
-    this.ctx.fillRect(-9, -24, 18, 7);
-    this.ctx.fillRect(-10, -22, 5, 8); // Sideburns
-    this.ctx.fillRect(-4, -25, 10, 3); // Hair tuft
+    // 6. DARK HAIR & SIDEBURNS
+    this.ctx.fillStyle = darkHair;
+    this.ctx.fillRect(-9, -25, 18, 7);
+    this.ctx.fillRect(-10, -22, 4, 8); // Sideburn
+    this.ctx.fillRect(-4, -26, 10, 3); // Hair tuft top
 
-    // 7. Face (Eye)
+    // 7. FACE & EYES
     if (player.animState !== 'CLIMB') {
+      this.ctx.fillStyle = '#ffffff';
+      this.ctx.fillRect(1, -17, 4, 3);
       this.ctx.fillStyle = '#0f172a';
-      this.ctx.fillRect(2, -16, 3, 3); // Eye facing direction
+      this.ctx.fillRect(3, -17, 2, 3); // Eye pupil
     }
 
     this.ctx.restore();

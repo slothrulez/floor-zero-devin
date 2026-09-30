@@ -8,8 +8,8 @@ import { LossScreen } from './components/LossScreen';
 import { TouchControls } from './components/TouchControls';
 import { sound } from './audio';
 
-// Path to generated player sprite sheet
-import playerSpriteSheet from './assets/images/player_spritesheet_1790787048568.jpg';
+// Path to newly generated high-quality player sprite sheet
+import playerSpriteSheet from './assets/images/hero_sprite_sheet_1790787928276.jpg';
 
 export default function App() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);

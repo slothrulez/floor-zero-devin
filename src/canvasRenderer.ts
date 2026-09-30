@@ -429,11 +429,16 @@ export class CanvasRenderer {
 
     this.ctx.imageSmoothingEnabled = true;
 
-    // Draw sprite scaled onto player bounding box
+    // Draw sprite ~1.5x larger than the hitbox, feet anchored to hitbox bottom
+    const scale = 1.5;
+    const dw = (player.width + 8) * scale;
+    const dh = (player.height + 4) * scale;
+    const dx = player.x + player.width / 2 - dw / 2;
+    const dy = player.y + player.height - dh;
     this.ctx.drawImage(
       this.spriteSheet,
       sx, sy, frameW, frameH,
-      player.x - 4, player.y - 2, player.width + 8, player.height + 4
+      dx, dy, dw, dh
     );
 
     this.ctx.imageSmoothingEnabled = false;

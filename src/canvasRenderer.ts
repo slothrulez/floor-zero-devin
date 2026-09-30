@@ -405,33 +405,29 @@ export class CanvasRenderer {
   private drawPlayerFromSpriteSheet(player: Player) {
     if (!this.spriteSheet) return;
 
-    // Grid frame mapping for uploaded/generated sprite sheet
-    // Sprite sheet dimension mapping
-    const frameW = this.spriteSheet.width / 6;
+    // hero_frames.png: uniform grid, 4 columns x 7 rows
+    // rows: 0 IDLE, 1 RUN right, 2 RUN left, 3 JUMP, 4 FALL, 5 CLIMB, 6 DEATH
+    const frameW = this.spriteSheet.width / 4;
     const frameH = this.spriteSheet.height / 7;
 
     let row = 0;
-    let col = Math.floor(player.animFrame) % 6;
-
-    if (player.animState === 'IDLE') {
-      row = 0;
-    } else if (player.animState === 'RUN') {
+    if (player.animState === 'RUN') {
       row = player.facing === 'right' ? 1 : 2;
     } else if (player.animState === 'JUMP') {
-      row = player.facing === 'right' ? 3 : 4;
-      col = 1;
+      row = 3;
     } else if (player.animState === 'FALL') {
       row = 4;
-      col = 2;
     } else if (player.animState === 'CLIMB') {
       row = 5;
     } else if (player.animState === 'DEATH') {
       row = 6;
-      col = Math.min(col, 3);
     }
 
+    const col = Math.floor(player.animFrame) % 4;
     const sx = col * frameW;
     const sy = row * frameH;
+
+    this.ctx.imageSmoothingEnabled = true;
 
     // Draw sprite scaled onto player bounding box
     this.ctx.drawImage(
@@ -439,6 +435,8 @@ export class CanvasRenderer {
       sx, sy, frameW, frameH,
       player.x - 4, player.y - 2, player.width + 8, player.height + 4
     );
+
+    this.ctx.imageSmoothingEnabled = false;
   }
 
   private drawPlayerProcedural(player: Player, globalTime: number) {

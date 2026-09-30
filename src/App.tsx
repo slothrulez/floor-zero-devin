@@ -8,8 +8,8 @@ import { LossScreen } from './components/LossScreen';
 import { TouchControls } from './components/TouchControls';
 import { sound } from './audio';
 
-// Path to newly generated high-quality player sprite sheet
-import playerSpriteSheet from './assets/images/hero_sprite_sheet_1790787928276.jpg';
+// Packed transparent sprite sheet (4 cols x 7 rows, uniform cells)
+import playerSpriteSheet from './assets/images/hero_frames.png';
 
 export default function App() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -74,21 +74,22 @@ export default function App() {
       <div className="absolute inset-0 pointer-events-none z-30 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%)] bg-[length:100%_4px]" />
       <div className="absolute inset-0 pointer-events-none z-30 bg-radial from-transparent via-transparent to-black/80" />
 
-      {/* GAME CANVAS CONTAINER */}
-      <div className="relative aspect-[8/9] max-h-screen max-w-full h-full flex items-center justify-center p-2">
-        <canvas
-          ref={canvasRef}
-          className="w-full h-full object-contain rounded-lg shadow-[0_0_50px_rgba(220,38,38,0.25)] border-2 border-neutral-800 bg-neutral-900"
+      {/* HUD BAR - sits above the playfield, never overlaps the game */}
+      {status !== 'START' && (
+        <GameHUD
+          stats={stats}
+          muted={muted}
+          onToggleMute={handleToggleMute}
         />
+      )}
 
-        {/* OVERLAYS & HUD */}
-        {status !== 'START' && (
-          <GameHUD
-            stats={stats}
-            muted={muted}
-            onToggleMute={handleToggleMute}
+      {/* GAME CANVAS CONTAINER */}
+      <div className="relative flex-1 min-h-0 w-full flex items-center justify-center p-2">
+        <div className="relative aspect-[8/9] h-full max-w-full">
+          <canvas
+            ref={canvasRef}
+            className="w-full h-full object-contain rounded-lg shadow-[0_0_50px_rgba(220,38,38,0.25)] border-2 border-neutral-800 bg-neutral-900"
           />
-        )}
 
         {status === 'START' && (
           <StartScreen
@@ -112,10 +113,11 @@ export default function App() {
           />
         )}
 
-        {/* TOUCH / MOBILE CONTROLS */}
-        {(status === 'PLAYING' || status === 'CHARGING_CORE') && (
-          <TouchControls onKeyChange={handleVirtualKey} />
-        )}
+          {/* TOUCH / MOBILE CONTROLS */}
+          {(status === 'PLAYING' || status === 'CHARGING_CORE') && (
+            <TouchControls onKeyChange={handleVirtualKey} />
+          )}
+        </div>
       </div>
     </div>
   );

@@ -185,7 +185,7 @@ export class GameEngine {
       { tierFrom: 2, tierTo: 3, x: 980 },
       { tierFrom: 3, tierTo: 4, x: 520 },
       { tierFrom: 4, tierTo: 5, x: 300 },
-      { tierFrom: 4, tierTo: 5, x: 880 },
+      { tierFrom: 4, tierTo: 5, x: 960 },
       { tierFrom: 5, tierTo: 6, x: 640 },
       { tierFrom: 6, tierTo: 7, x: 560 },
     ];

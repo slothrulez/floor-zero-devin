@@ -311,14 +311,14 @@ export class CanvasRenderer {
       // Flashing Interaction Prompt
       const flash = Math.floor(globalTime * 4) % 2 === 0;
       this.ctx.fillStyle = flash ? '#fde047' : '#eab308';
-      this.ctx.fillRect(x - 25, y - 35, w + 50, 26);
+      this.ctx.fillRect(x + w / 2 - 135, y + h + 8, 270, 26);
       this.ctx.strokeStyle = '#000000';
       this.ctx.lineWidth = 2;
-      this.ctx.strokeRect(x - 25, y - 35, w + 50, 26);
+      this.ctx.strokeRect(x + w / 2 - 135, y + h + 8, 270, 26);
 
       this.ctx.fillStyle = '#000000';
       this.ctx.font = '700 12px "Press Start 2P", cursive, monospace';
-      this.ctx.fillText('PRESS [E] TO SHUTDOWN', x + w / 2, y - 18);
+      this.ctx.fillText('PRESS [E] TO SHUTDOWN', x + w / 2, y + h + 25);
     }
 
     this.ctx.restore();

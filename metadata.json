@@ -1,0 +1,6 @@
+{
+  "name": "FLOOR ZERO: 60 SECONDS",
+  "description": "Fast-paced retro arcade vertical platformer where you must reach the Emergency Core before the building collapses.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

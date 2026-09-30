@@ -1,0 +1,580 @@
+import { EmergencyCore, FloorBlock, Hazard, Ladder, Particle, Platform, Player } from './types';
+
+export class CanvasRenderer {
+  private ctx: CanvasRenderingContext2D;
+  private width: number;
+  private height: number;
+  private spriteSheet: HTMLImageElement | null = null;
+  private spriteSheetLoaded = false;
+
+  constructor(ctx: CanvasRenderingContext2D, width: number, height: number, spriteSheetPath?: string) {
+    this.ctx = ctx;
+    this.width = width;
+    this.height = height;
+
+    if (spriteSheetPath) {
+      this.spriteSheet = new Image();
+      this.spriteSheet.src = spriteSheetPath;
+      this.spriteSheet.onload = () => {
+        this.spriteSheetLoaded = true;
+      };
+    }
+  }
+
+  public setSpriteSheet(path: string) {
+    this.spriteSheet = new Image();
+    this.spriteSheet.src = path;
+    this.spriteSheet.onload = () => {
+      this.spriteSheetLoaded = true;
+    };
+  }
+
+  public clear(shakeX = 0, shakeY = 0) {
+    this.ctx.save();
+    this.ctx.translate(shakeX, shakeY);
+
+    // Dark industrial background gradient
+    const bgGradient = this.ctx.createLinearGradient(0, 0, 0, this.height);
+    bgGradient.addColorStop(0, '#0a0d14');
+    bgGradient.addColorStop(0.5, '#121620');
+    bgGradient.addColorStop(1, '#1b0d0d'); // Red tint towards bottom zero floor
+    this.ctx.fillStyle = bgGradient;
+    this.ctx.fillRect(0, 0, this.width, this.height);
+
+    // Industrial background grid & support beams
+    this.drawBackgroundStructure();
+  }
+
+  private drawBackgroundStructure() {
+    this.ctx.save();
+    this.ctx.strokeStyle = '#1e2638';
+    this.ctx.lineWidth = 1;
+
+    // Vertical structural pillars
+    const pillars = [60, 200, 400, 600, 740];
+    pillars.forEach((px) => {
+      this.ctx.fillStyle = '#141a26';
+      this.ctx.fillRect(px - 10, 0, 20, this.height);
+      this.ctx.strokeRect(px - 10, 0, 20, this.height);
+
+      // Steel truss diagonals
+      this.ctx.strokeStyle = '#222d42';
+      this.ctx.beginPath();
+      for (let y = 0; y < this.height; y += 80) {
+        this.ctx.moveTo(px - 10, y);
+        this.ctx.lineTo(px + 10, y + 40);
+        this.ctx.moveTo(px + 10, y + 40);
+        this.ctx.lineTo(px - 10, y + 80);
+      }
+      this.ctx.stroke();
+    });
+
+    // Floor indicators on wall
+    this.ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+    this.ctx.font = '700 24px "Chakra Petch", monospace';
+    this.ctx.textAlign = 'right';
+
+    const floorNames = [
+      'CORE - FLOOR ZERO',
+      'LEVEL 6 - SECTOR A',
+      'LEVEL 5 - SECTOR B',
+      'LEVEL 4 - SECTOR C',
+      'LEVEL 3 - SECTOR D',
+      'LEVEL 2 - SECTOR E',
+      'LEVEL 1 - SUB-BASE',
+      'GROUND ZERO'
+    ];
+
+    const ys = [80, 190, 300, 410, 520, 630, 740, 840];
+    ys.forEach((y, i) => {
+      if (floorNames[i]) {
+        this.ctx.fillText(floorNames[i], this.width - 25, y - 10);
+      }
+    });
+
+    this.ctx.restore();
+  }
+
+  public drawLadders(ladders: Ladder[]) {
+    ladders.forEach((ladder) => {
+      this.ctx.save();
+      const x = ladder.x;
+      const w = ladder.width;
+      const yTop = ladder.yTop;
+      const yBot = ladder.yBottom;
+
+      // Vertical rails (Yellow / Industrial Metal)
+      this.ctx.fillStyle = '#d97706';
+      this.ctx.fillRect(x, yTop, 5, yBot - yTop);
+      this.ctx.fillRect(x + w - 5, yTop, 5, yBot - yTop);
+
+      // Rail highlights
+      this.ctx.fillStyle = '#fbbf24';
+      this.ctx.fillRect(x + 1, yTop, 2, yBot - yTop);
+      this.ctx.fillRect(x + w - 4, yTop, 2, yBot - yTop);
+
+      // Rungs
+      this.ctx.fillStyle = '#92400e';
+      this.ctx.strokeStyle = '#f59e0b';
+      this.ctx.lineWidth = 2;
+
+      const rungSpacing = 16;
+      for (let y = yTop + 8; y < yBot; y += rungSpacing) {
+        this.ctx.fillRect(x + 3, y - 2, w - 6, 4);
+        this.ctx.beginPath();
+        this.ctx.moveTo(x + 2, y);
+        this.ctx.lineTo(x + w - 2, y);
+        this.ctx.stroke();
+      }
+
+      this.ctx.restore();
+    });
+  }
+
+  public drawPlatforms(platforms: Platform[], globalTime: number) {
+    platforms.forEach((p) => {
+      p.blocks.forEach((block) => {
+        if (block.state === 'DESTROYED') return;
+
+        this.ctx.save();
+        const shakeX = block.shakeOffset;
+        const x = block.x + shakeX;
+        const y = block.y;
+        const w = block.width;
+        const h = block.height;
+
+        if (block.state === 'SAFE') {
+          // Metallic steel platform block
+          const grad = this.ctx.createLinearGradient(x, y, x, y + h);
+          grad.addColorStop(0, '#475569');
+          grad.addColorStop(0.3, '#334155');
+          grad.addColorStop(1, '#1e293b');
+
+          this.ctx.fillStyle = grad;
+          this.ctx.fillRect(x, y, w, h);
+
+          // Top highlight line
+          this.ctx.fillStyle = '#94a3b8';
+          this.ctx.fillRect(x, y, w, 2);
+
+          // Caution stripe border on bottom
+          this.drawHazardStripes(x, y + h - 4, w, 4);
+
+          // Rivets
+          this.ctx.fillStyle = '#64748b';
+          this.ctx.fillRect(x + 4, y + 4, 3, 3);
+          this.ctx.fillRect(x + w - 7, y + 4, 3, 3);
+        } else if (block.state === 'CRACKING') {
+          // Warning yellow pulsing glow
+          const pulse = (Math.sin(globalTime * 20) + 1) / 2;
+          const grad = this.ctx.createLinearGradient(x, y, x, y + h);
+          grad.addColorStop(0, `rgb(${200 + pulse * 55}, 140, 20)`);
+          grad.addColorStop(1, '#78350f');
+
+          this.ctx.fillStyle = grad;
+          this.ctx.fillRect(x, y, w, h);
+
+          // Top flashing border
+          this.ctx.fillStyle = pulse > 0.5 ? '#fde047' : '#ca8a04';
+          this.ctx.fillRect(x, y, w, 3);
+
+          // Crack fissures
+          this.ctx.strokeStyle = '#f97316';
+          this.ctx.lineWidth = 2;
+          this.ctx.beginPath();
+          this.ctx.moveTo(x + w * 0.2, y);
+          this.ctx.lineTo(x + w * 0.35, y + h * 0.6);
+          this.ctx.lineTo(x + w * 0.25, y + h);
+
+          this.ctx.moveTo(x + w * 0.7, y);
+          this.ctx.lineTo(x + w * 0.6, y + h * 0.5);
+          this.ctx.lineTo(x + w * 0.8, y + h);
+          this.ctx.stroke();
+        } else if (block.state === 'COLLAPSING') {
+          // Intense Red crumbling floor
+          const pulse = (Math.sin(globalTime * 35) + 1) / 2;
+          this.ctx.fillStyle = pulse > 0.4 ? '#dc2626' : '#991b1b';
+          this.ctx.fillRect(x, y, w, h);
+
+          // Glowing glowing red crack lines
+          this.ctx.strokeStyle = '#fef08a';
+          this.ctx.lineWidth = 3;
+          this.ctx.beginPath();
+          this.ctx.moveTo(x + 5, y);
+          this.ctx.lineTo(x + w * 0.4, y + h * 0.8);
+          this.ctx.lineTo(x + w - 5, y);
+          this.ctx.moveTo(x + w * 0.5, y + h);
+          this.ctx.lineTo(x + w * 0.4, y + 2);
+          this.ctx.stroke();
+
+          // Crumbling particles falling down
+          this.ctx.fillStyle = '#ef4444';
+          for (let i = 0; i < 3; i++) {
+            const px = x + Math.random() * w;
+            const py = y + h + Math.random() * 12;
+            this.ctx.fillRect(px, py, 4, 4);
+          }
+        }
+
+        this.ctx.restore();
+      });
+    });
+  }
+
+  private drawHazardStripes(x: number, y: number, w: number, h: number) {
+    this.ctx.save();
+    this.ctx.beginPath();
+    this.ctx.rect(x, y, w, h);
+    this.ctx.clip();
+
+    this.ctx.fillStyle = '#eab308';
+    this.ctx.fillRect(x, y, w, h);
+
+    this.ctx.fillStyle = '#0f172a';
+    for (let px = x - h; px < x + w + h; px += 12) {
+      this.ctx.beginPath();
+      this.ctx.moveTo(px, y + h);
+      this.ctx.lineTo(px + 6, y + h);
+      this.ctx.lineTo(px + 12, y);
+      this.ctx.lineTo(px + 6, y);
+      this.ctx.fill();
+    }
+    this.ctx.restore();
+  }
+
+  public drawEmergencyCore(core: EmergencyCore, globalTime: number, playerNear: boolean) {
+    this.ctx.save();
+    const x = core.x;
+    const y = core.y;
+    const w = core.width;
+    const h = core.height;
+
+    // Base Station frame
+    this.ctx.fillStyle = '#1e293b';
+    this.ctx.fillRect(x, y, w, h);
+
+    this.ctx.strokeStyle = '#475569';
+    this.ctx.lineWidth = 3;
+    this.ctx.strokeRect(x, y, w, h);
+
+    // Hazard border lines
+    this.drawHazardStripes(x, y + h - 8, w, 8);
+
+    // Core Plasma Chamber
+    const pulse = (Math.sin(globalTime * (core.isCharging ? 25 : 6)) + 1) / 2;
+    const coreColor = core.isCharging
+      ? `rgb(${50 + pulse * 200}, 240, ${200 + pulse * 55})`
+      : `rgb(239, ${68 + pulse * 100}, 68)`;
+
+    const coreGrad = this.ctx.createRadialGradient(
+      x + w / 2, y + h / 2 - 10, 5,
+      x + w / 2, y + h / 2 - 10, 30
+    );
+    coreGrad.addColorStop(0, coreColor);
+    coreGrad.addColorStop(1, '#0f172a');
+
+    this.ctx.fillStyle = coreGrad;
+    this.ctx.beginPath();
+    this.ctx.arc(x + w / 2, y + h / 2 - 10, 26, 0, Math.PI * 2);
+    this.ctx.fill();
+    this.ctx.strokeStyle = core.isCharging ? '#22d3ee' : '#f87171';
+    this.ctx.lineWidth = 3;
+    this.ctx.stroke();
+
+    // Core Label
+    this.ctx.fillStyle = '#f8fafc';
+    this.ctx.font = '700 12px "Chakra Petch", monospace';
+    this.ctx.textAlign = 'center';
+    this.ctx.fillText('EMERGENCY CORE', x + w / 2, y + 16);
+
+    // Charge Progress Bar when charging
+    if (core.isCharging) {
+      const barW = w - 16;
+      const barH = 10;
+      const barX = x + 8;
+      const barY = y + h - 22;
+
+      this.ctx.fillStyle = '#0284c7';
+      this.ctx.fillRect(barX, barY, barW, barH);
+
+      this.ctx.fillStyle = '#38bdf8';
+      this.ctx.fillRect(barX, barY, barW * core.chargeProgress, barH);
+
+      this.ctx.strokeStyle = '#f8fafc';
+      this.ctx.lineWidth = 1;
+      this.ctx.strokeRect(barX, barY, barW, barH);
+
+      this.ctx.fillStyle = '#ffffff';
+      this.ctx.font = '700 10px monospace';
+      this.ctx.fillText(`SHUTDOWN ${Math.floor(core.chargeProgress * 100)}%`, x + w / 2, barY - 4);
+    } else if (playerNear) {
+      // Flashing Interaction Prompt
+      const flash = Math.floor(globalTime * 4) % 2 === 0;
+      this.ctx.fillStyle = flash ? '#fde047' : '#eab308';
+      this.ctx.fillRect(x - 25, y - 35, w + 50, 26);
+      this.ctx.strokeStyle = '#000000';
+      this.ctx.lineWidth = 2;
+      this.ctx.strokeRect(x - 25, y - 35, w + 50, 26);
+
+      this.ctx.fillStyle = '#000000';
+      this.ctx.font = '700 12px "Press Start 2P", cursive, monospace';
+      this.ctx.fillText('PRESS [E] TO SHUTDOWN', x + w / 2, y - 18);
+    }
+
+    this.ctx.restore();
+  }
+
+  public drawHazards(hazards: Hazard[], globalTime: number) {
+    hazards.forEach((h) => {
+      this.ctx.save();
+      this.ctx.translate(h.x, h.y);
+      this.ctx.rotate(h.rotation);
+
+      if (h.type === 'BARREL') {
+        // Red Industrial Explosive Barrel
+        this.ctx.fillStyle = '#dc2626';
+        this.ctx.beginPath();
+        this.ctx.arc(0, 0, h.radius, 0, Math.PI * 2);
+        this.ctx.fill();
+
+        this.ctx.strokeStyle = '#7f1d1d';
+        this.ctx.lineWidth = 3;
+        this.ctx.stroke();
+
+        // Metallic bands & hazard logo
+        this.ctx.strokeStyle = '#fbbf24';
+        this.ctx.lineWidth = 2;
+        this.ctx.beginPath();
+        this.ctx.moveTo(-h.radius + 2, -4);
+        this.ctx.lineTo(h.radius - 2, -4);
+        this.ctx.moveTo(-h.radius + 2, 4);
+        this.ctx.lineTo(h.radius - 2, 4);
+        this.ctx.stroke();
+
+        this.ctx.fillStyle = '#fef08a';
+        this.ctx.font = 'bold 10px monospace';
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
+        this.ctx.fillText('⚡', 0, 0);
+      } else if (h.type === 'CONCRETE') {
+        // Concrete Chunk
+        this.ctx.fillStyle = '#64748b';
+        this.ctx.beginPath();
+        this.ctx.moveTo(-h.radius, -h.radius + 4);
+        this.ctx.lineTo(h.radius - 2, -h.radius);
+        this.ctx.lineTo(h.radius, h.radius - 2);
+        this.ctx.lineTo(-h.radius + 4, h.radius);
+        this.ctx.closePath();
+        this.ctx.fill();
+
+        this.ctx.strokeStyle = '#334155';
+        this.ctx.lineWidth = 2;
+        this.ctx.stroke();
+      } else {
+        // Gas Canister
+        this.ctx.fillStyle = '#2563eb';
+        this.ctx.fillRect(-h.radius, -h.radius + 4, h.radius * 2, h.radius * 2 - 8);
+        this.ctx.strokeStyle = '#1d4ed8';
+        this.ctx.lineWidth = 2;
+        this.ctx.strokeRect(-h.radius, -h.radius + 4, h.radius * 2, h.radius * 2 - 8);
+
+        this.ctx.fillStyle = '#fbbf24';
+        this.ctx.beginPath();
+        this.ctx.arc(0, -h.radius + 2, 4, 0, Math.PI * 2);
+        this.ctx.fill();
+      }
+
+      this.ctx.restore();
+    });
+  }
+
+  public drawPlayer(player: Player, globalTime: number) {
+    this.ctx.save();
+
+    // If sprite sheet is loaded, draw from sprite sheet or use high-fidelity procedural sprite
+    if (this.spriteSheetLoaded && this.spriteSheet) {
+      this.drawPlayerFromSpriteSheet(player);
+    } else {
+      this.drawPlayerProcedural(player, globalTime);
+    }
+
+    this.ctx.restore();
+  }
+
+  private drawPlayerFromSpriteSheet(player: Player) {
+    if (!this.spriteSheet) return;
+
+    // Grid frame mapping for uploaded/generated sprite sheet
+    // Sprite sheet dimension mapping
+    const frameW = this.spriteSheet.width / 6;
+    const frameH = this.spriteSheet.height / 7;
+
+    let row = 0;
+    let col = Math.floor(player.animFrame) % 6;
+
+    if (player.animState === 'IDLE') {
+      row = 0;
+    } else if (player.animState === 'RUN') {
+      row = player.facing === 'right' ? 1 : 2;
+    } else if (player.animState === 'JUMP') {
+      row = player.facing === 'right' ? 3 : 4;
+      col = 1;
+    } else if (player.animState === 'FALL') {
+      row = 4;
+      col = 2;
+    } else if (player.animState === 'CLIMB') {
+      row = 5;
+    } else if (player.animState === 'DEATH') {
+      row = 6;
+      col = Math.min(col, 3);
+    }
+
+    const sx = col * frameW;
+    const sy = row * frameH;
+
+    // Draw sprite scaled onto player bounding box
+    this.ctx.drawImage(
+      this.spriteSheet,
+      sx, sy, frameW, frameH,
+      player.x - 4, player.y - 2, player.width + 8, player.height + 4
+    );
+  }
+
+  private drawPlayerProcedural(player: Player, globalTime: number) {
+    const x = player.x;
+    const y = player.y;
+    const w = player.width;
+    const h = player.height;
+
+    const isLeft = player.facing === 'left';
+
+    this.ctx.save();
+    this.ctx.translate(x + w / 2, y + h / 2);
+    if (isLeft) {
+      this.ctx.scale(-1, 1);
+    }
+
+    // Exact appearance requested: Dark hair, Black outfit (shirt & pants), Red sneakers!
+    const frame = Math.floor(player.animFrame);
+
+    if (player.animState === 'DEATH') {
+      // Fallen character on floor
+      this.ctx.rotate(Math.PI / 2);
+      // Torso (Black Shirt)
+      this.ctx.fillStyle = '#18181b';
+      this.ctx.fillRect(-10, -8, 20, 16);
+      // Pants (Black)
+      this.ctx.fillStyle = '#09090b';
+      this.ctx.fillRect(-10, 8, 20, 12);
+      // Red Sneakers
+      this.ctx.fillStyle = '#ef4444';
+      this.ctx.fillRect(-12, 20, 12, 6);
+      this.ctx.fillRect(2, 20, 12, 6);
+      // Head & Dark Hair
+      this.ctx.fillStyle = '#fca5a5';
+      this.ctx.beginPath();
+      this.ctx.arc(0, -14, 8, 0, Math.PI * 2);
+      this.ctx.fill();
+      this.ctx.fillStyle = '#172554';
+      this.ctx.fillRect(-8, -22, 16, 8);
+      this.ctx.restore();
+      return;
+    }
+
+    // Animation bobbing offset
+    let legOffset = 0;
+    let armOffset = 0;
+
+    if (player.animState === 'RUN') {
+      legOffset = Math.sin(frame * 1.5) * 8;
+      armOffset = Math.cos(frame * 1.5) * 6;
+    } else if (player.animState === 'CLIMB') {
+      legOffset = Math.sin(globalTime * 15) * 6;
+      armOffset = -legOffset;
+    }
+
+    // 1. Red Sneakers (Feet / Shoes)
+    this.ctx.fillStyle = '#dc2626'; // Bright Red sneakers
+    if (player.animState === 'CLIMB') {
+      this.ctx.fillRect(-10, 16 + legOffset, 7, 7);
+      this.ctx.fillRect(3, 16 - legOffset, 7, 7);
+      // White sneaker soles
+      this.ctx.fillStyle = '#f8fafc';
+      this.ctx.fillRect(-10, 21 + legOffset, 7, 2);
+      this.ctx.fillRect(3, 21 - legOffset, 7, 2);
+    } else if (player.animState === 'JUMP') {
+      this.ctx.fillRect(-9, 14, 8, 6);
+      this.ctx.fillRect(2, 12, 8, 6);
+    } else {
+      // Normal walk/run sneakers
+      this.ctx.fillRect(-10 - legOffset * 0.4, 16, 9, 7);
+      this.ctx.fillRect(2 + legOffset * 0.4, 16, 9, 7);
+      // White sneaker soles
+      this.ctx.fillStyle = '#f8fafc';
+      this.ctx.fillRect(-10 - legOffset * 0.4, 21, 9, 2);
+      this.ctx.fillRect(2 + legOffset * 0.4, 21, 9, 2);
+    }
+
+    // 2. Black Pants (Legs)
+    this.ctx.fillStyle = '#09090b'; // Black trousers
+    this.ctx.fillRect(-9 - legOffset * 0.3, 4, 7, 13);
+    this.ctx.fillRect(2 + legOffset * 0.3, 4, 7, 13);
+
+    // 3. Black Shirt (Torso)
+    this.ctx.fillStyle = '#18181b'; // Black top
+    this.ctx.fillRect(-10, -10, 20, 15);
+    // Red accent trim on shirt collar/logo
+    this.ctx.fillStyle = '#ef4444';
+    this.ctx.fillRect(-2, -8, 4, 4);
+
+    // 4. Arms
+    this.ctx.fillStyle = '#18181b';
+    if (player.animState === 'CLIMB') {
+      this.ctx.fillRect(-13, -16 + armOffset, 5, 12);
+      this.ctx.fillRect(8, -16 - armOffset, 5, 12);
+      // Hands (Skin tone)
+      this.ctx.fillStyle = '#fed7aa';
+      this.ctx.fillRect(-13, -18 + armOffset, 5, 4);
+      this.ctx.fillRect(8, -18 - armOffset, 5, 4);
+    } else {
+      this.ctx.fillRect(-13 + armOffset * 0.5, -8, 5, 12);
+      this.ctx.fillRect(8 - armOffset * 0.5, -8, 5, 12);
+      // Hands
+      this.ctx.fillStyle = '#fed7aa';
+      this.ctx.fillRect(-13 + armOffset * 0.5, 2, 5, 4);
+      this.ctx.fillRect(8 - armOffset * 0.5, 2, 5, 4);
+    }
+
+    // 5. Head & Skin
+    this.ctx.fillStyle = '#fed7aa'; // Skin tone
+    this.ctx.fillRect(-7, -20, 14, 11);
+
+    // 6. Dark Messy Hair
+    this.ctx.fillStyle = '#172554'; // Dark hair
+    this.ctx.fillRect(-9, -24, 18, 7);
+    this.ctx.fillRect(-10, -22, 5, 8); // Sideburns
+    this.ctx.fillRect(-4, -25, 10, 3); // Hair tuft
+
+    // 7. Face (Eye)
+    if (player.animState !== 'CLIMB') {
+      this.ctx.fillStyle = '#0f172a';
+      this.ctx.fillRect(2, -16, 3, 3); // Eye facing direction
+    }
+
+    this.ctx.restore();
+  }
+
+  public drawParticles(particles: Particle[]) {
+    particles.forEach((p) => {
+      this.ctx.save();
+      this.ctx.globalAlpha = Math.max(0, p.life / p.maxLife);
+      this.ctx.fillStyle = p.color;
+      this.ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
+      this.ctx.restore();
+    });
+  }
+
+  public endFrame() {
+    this.ctx.restore();
+  }
+}

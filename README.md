@@ -4,6 +4,18 @@ A fast-paced retro arcade vertical platformer. The building is collapsing around
 
 Built with React, TypeScript, and an HTML5 Canvas game loop, with all sound effects synthesized live through the Web Audio API.
 
+![Gameplay](docs/screenshots/gameplay.png)
+
+## Screenshots
+
+| Start screen | Core shutdown |
+| --- | --- |
+| ![Start screen](docs/screenshots/start-screen.png) | ![Core shutdown in progress](docs/screenshots/core-shutdown.png) |
+
+| Win | Loss |
+| --- | --- |
+| ![Disaster prevented screen](docs/screenshots/win-screen.png) | ![Structural failure screen](docs/screenshots/loss-screen.png) |
+
 ## Gameplay
 
 - You start on the ground floor (tier 0). The Emergency Core sits on tier 7 at the top of the building.

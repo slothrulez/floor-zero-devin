@@ -51,7 +51,7 @@ export class CanvasRenderer {
     this.ctx.lineWidth = 1;
 
     // Vertical structural pillars
-    const pillars = [60, 200, 400, 600, 740];
+    const pillars = [120, 350, 600, 850, 1080];
     pillars.forEach((px) => {
       this.ctx.fillStyle = '#141a26';
       this.ctx.fillRect(px - 10, 0, 20, this.height);
@@ -311,14 +311,14 @@ export class CanvasRenderer {
       // Flashing Interaction Prompt
       const flash = Math.floor(globalTime * 4) % 2 === 0;
       this.ctx.fillStyle = flash ? '#fde047' : '#eab308';
-      this.ctx.fillRect(x - 25, y - 35, w + 50, 26);
+      this.ctx.fillRect(x + w / 2 - 135, y + h + 8, 270, 26);
       this.ctx.strokeStyle = '#000000';
       this.ctx.lineWidth = 2;
-      this.ctx.strokeRect(x - 25, y - 35, w + 50, 26);
+      this.ctx.strokeRect(x + w / 2 - 135, y + h + 8, 270, 26);
 
       this.ctx.fillStyle = '#000000';
       this.ctx.font = '700 12px "Press Start 2P", cursive, monospace';
-      this.ctx.fillText('PRESS [E] TO SHUTDOWN', x + w / 2, y - 18);
+      this.ctx.fillText('PRESS [E] TO SHUTDOWN', x + w / 2, y + h + 25);
     }
 
     this.ctx.restore();
@@ -405,40 +405,43 @@ export class CanvasRenderer {
   private drawPlayerFromSpriteSheet(player: Player) {
     if (!this.spriteSheet) return;
 
-    // Grid frame mapping for uploaded/generated sprite sheet
-    // Sprite sheet dimension mapping
-    const frameW = this.spriteSheet.width / 6;
+    // hero_frames.png: uniform grid, 4 columns x 7 rows
+    // rows: 0 IDLE, 1 RUN right, 2 RUN left, 3 JUMP, 4 FALL, 5 CLIMB, 6 DEATH
+    const frameW = this.spriteSheet.width / 4;
     const frameH = this.spriteSheet.height / 7;
 
     let row = 0;
-    let col = Math.floor(player.animFrame) % 6;
-
-    if (player.animState === 'IDLE') {
-      row = 0;
-    } else if (player.animState === 'RUN') {
+    if (player.animState === 'RUN') {
       row = player.facing === 'right' ? 1 : 2;
     } else if (player.animState === 'JUMP') {
-      row = player.facing === 'right' ? 3 : 4;
-      col = 1;
+      row = 3;
     } else if (player.animState === 'FALL') {
       row = 4;
-      col = 2;
     } else if (player.animState === 'CLIMB') {
       row = 5;
     } else if (player.animState === 'DEATH') {
       row = 6;
-      col = Math.min(col, 3);
     }
 
+    const col = Math.floor(player.animFrame) % 4;
     const sx = col * frameW;
     const sy = row * frameH;
 
-    // Draw sprite scaled onto player bounding box
+    this.ctx.imageSmoothingEnabled = true;
+
+    // Draw sprite ~1.5x larger than the hitbox, feet anchored to hitbox bottom
+    const scale = 1.75;
+    const dw = (player.width + 8) * scale;
+    const dh = (player.height + 4) * scale;
+    const dx = player.x + player.width / 2 - dw / 2;
+    const dy = player.y + player.height - dh;
     this.ctx.drawImage(
       this.spriteSheet,
       sx, sy, frameW, frameH,
-      player.x - 4, player.y - 2, player.width + 8, player.height + 4
+      dx, dy, dw, dh
     );
+
+    this.ctx.imageSmoothingEnabled = false;
   }
 
   private drawPlayerProcedural(player: Player, globalTime: number) {

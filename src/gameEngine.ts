@@ -44,10 +44,10 @@ export class GameEngine {
   constructor(canvas: HTMLCanvasElement, spriteSheetPath?: string) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d')!;
-    this.canvas.width = 800;
+    this.canvas.width = 1200;
     this.canvas.height = 900;
 
-    this.renderer = new CanvasRenderer(this.ctx, 800, 900, spriteSheetPath);
+    this.renderer = new CanvasRenderer(this.ctx, 1200, 900, spriteSheetPath);
 
     this.stats = {
       timeRemaining: 60.0,
@@ -66,7 +66,7 @@ export class GameEngine {
 
   private createDefaultPlayer(): Player {
     return {
-      x: 380,
+      x: 600,
       y: 792,
       vx: 0,
       vy: 0,
@@ -85,7 +85,7 @@ export class GameEngine {
 
   private createDefaultCore(): EmergencyCore {
     return {
-      x: 350,
+      x: 550,
       y: 20,
       width: 100,
       height: 60,
@@ -116,8 +116,8 @@ export class GameEngine {
       const blockHeight = 16;
 
       if (tier === 0) {
-        // Full ground floor across canvas (x=40 to 760)
-        for (let x = 40; x <= 710; x += blockWidth) {
+        // Full ground floor across canvas (x=40 to 1190)
+        for (let x = 40; x <= 1140; x += blockWidth) {
           blocks.push({
             id: `t0_${x}`,
             tier: 0,
@@ -132,7 +132,7 @@ export class GameEngine {
         }
       } else if (tier === 7) {
         // Core top platform centered
-        for (let x = 250; x <= 500; x += blockWidth) {
+        for (let x = 450; x <= 700; x += blockWidth) {
           blocks.push({
             id: `t7_${x}`,
             tier: 7,
@@ -150,14 +150,14 @@ export class GameEngine {
         let skipRangeStart = -1;
         let skipRangeEnd = -1;
 
-        if (tier === 1) { skipRangeStart = 500; skipRangeEnd = 600; }
-        else if (tier === 2) { skipRangeStart = 200; skipRangeEnd = 300; }
-        else if (tier === 3) { skipRangeStart = 450; skipRangeEnd = 550; }
-        else if (tier === 4) { skipRangeStart = 250; skipRangeEnd = 350; }
-        else if (tier === 5) { skipRangeStart = 550; skipRangeEnd = 650; }
-        else if (tier === 6) { skipRangeStart = 150; skipRangeEnd = 250; }
+        if (tier === 1) { skipRangeStart = 800; skipRangeEnd = 900; }
+        else if (tier === 2) { skipRangeStart = 300; skipRangeEnd = 400; }
+        else if (tier === 3) { skipRangeStart = 700; skipRangeEnd = 800; }
+        else if (tier === 4) { skipRangeStart = 400; skipRangeEnd = 500; }
+        else if (tier === 5) { skipRangeStart = 850; skipRangeEnd = 950; }
+        else if (tier === 6) { skipRangeStart = 250; skipRangeEnd = 350; }
 
-        for (let x = 60; x <= 690; x += blockWidth) {
+        for (let x = 60; x <= 1140; x += blockWidth) {
           if (x >= skipRangeStart && x < skipRangeEnd) continue; // Gap
           blocks.push({
             id: `t${tier}_${x}`,
@@ -178,16 +178,16 @@ export class GameEngine {
 
     // Ladders connecting adjacent tiers (Zig-zag vertical path)
     const ladderConfigs = [
-      { tierFrom: 0, tierTo: 1, x: 180 },
-      { tierFrom: 0, tierTo: 1, x: 620 },
-      { tierFrom: 1, tierTo: 2, x: 380 },
-      { tierFrom: 2, tierTo: 3, x: 120 },
-      { tierFrom: 2, tierTo: 3, x: 650 },
-      { tierFrom: 3, tierTo: 4, x: 320 },
-      { tierFrom: 4, tierTo: 5, x: 160 },
-      { tierFrom: 4, tierTo: 5, x: 580 },
-      { tierFrom: 5, tierTo: 6, x: 420 },
-      { tierFrom: 6, tierTo: 7, x: 375 },
+      { tierFrom: 0, tierTo: 1, x: 280 },
+      { tierFrom: 0, tierTo: 1, x: 900 },
+      { tierFrom: 1, tierTo: 2, x: 600 },
+      { tierFrom: 2, tierTo: 3, x: 220 },
+      { tierFrom: 2, tierTo: 3, x: 980 },
+      { tierFrom: 3, tierTo: 4, x: 520 },
+      { tierFrom: 4, tierTo: 5, x: 300 },
+      { tierFrom: 4, tierTo: 5, x: 960 },
+      { tierFrom: 5, tierTo: 6, x: 640 },
+      { tierFrom: 6, tierTo: 7, x: 560 },
     ];
 
     ladderConfigs.forEach((c, idx) => {
@@ -475,8 +475,8 @@ export class GameEngine {
       if (h.x - h.radius < 40) {
         h.x = 40 + h.radius;
         h.vx = Math.abs(h.vx);
-      } else if (h.x + h.radius > 760) {
-        h.x = 760 - h.radius;
+      } else if (h.x + h.radius > 1160) {
+        h.x = 1160 - h.radius;
         h.vx = -Math.abs(h.vx);
       }
 
@@ -542,7 +542,7 @@ export class GameEngine {
     if (!platform) return;
 
     const spawnRight = Math.random() > 0.5;
-    const x = spawnRight ? 720 : 80;
+    const x = spawnRight ? 1140 : 60;
     const vx = (spawnRight ? -1 : 1) * (150 + Math.random() * 80);
 
     const types: ('BARREL' | 'CONCRETE' | 'CANISTER')[] = ['BARREL', 'CONCRETE', 'CANISTER'];
@@ -654,7 +654,7 @@ export class GameEngine {
     p.x += p.vx * dt;
 
     // Boundaries
-    p.x = Math.max(20, Math.min(780 - p.width, p.x));
+    p.x = Math.max(20, Math.min(1180 - p.width, p.x));
 
     // 3. Vertical Physics & Jump
     if (jumpPressed && p.isGrounded) {
@@ -802,15 +802,15 @@ export class GameEngine {
     if (this.bannerText) {
       this.ctx.save();
       this.ctx.fillStyle = 'rgba(239, 68, 68, 0.85)';
-      this.ctx.fillRect(0, 380, 800, 70);
+      this.ctx.fillRect(0, 380, 1200, 70);
       this.ctx.strokeStyle = '#fde047';
       this.ctx.lineWidth = 4;
-      this.ctx.strokeRect(0, 380, 800, 70);
+      this.ctx.strokeRect(0, 380, 1200, 70);
 
       this.ctx.fillStyle = '#ffffff';
       this.ctx.font = '700 22px "Press Start 2P", cursive, monospace';
       this.ctx.textAlign = 'center';
-      this.ctx.fillText(this.bannerText, 400, 424);
+      this.ctx.fillText(this.bannerText, 600, 424);
       this.ctx.restore();
     }
 
@@ -818,12 +818,12 @@ export class GameEngine {
     if (this.countdownNumber > 0 && this.timeRemaining <= 5.0 && this.timeRemaining > 0) {
       this.ctx.save();
       this.ctx.fillStyle = 'rgba(239, 68, 68, 0.3)';
-      this.ctx.fillRect(0, 0, 800, 900);
+      this.ctx.fillRect(0, 0, 1200, 900);
 
       this.ctx.fillStyle = '#fef08a';
       this.ctx.font = '900 120px "Press Start 2P", cursive, monospace';
       this.ctx.textAlign = 'center';
-      this.ctx.fillText(this.countdownNumber.toString(), 400, 480);
+      this.ctx.fillText(this.countdownNumber.toString(), 600, 480);
       this.ctx.restore();
     }
 
